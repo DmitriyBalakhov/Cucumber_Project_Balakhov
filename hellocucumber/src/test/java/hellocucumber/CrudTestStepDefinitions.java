@@ -9,13 +9,12 @@ import io.restassured.RestAssured;
 import io.restassured.http.Cookie;
 import io.restassured.response.Response;
 import static io.restassured.RestAssured.given;
-import static org.apache.http.HttpStatus.SC_OK;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class CrudTestStepDefinitions {
 
     private Cookie sessionCookie;
-    private Response response;
+    private Response loginResponse;
     @Given("URI is set to {string}")
     public void uriIsSetToHttpsQautoForstudySpace(String s) {
         RestAssured.baseURI = "https://qauto2.forstudy.space";
@@ -23,7 +22,7 @@ public class CrudTestStepDefinitions {
 
     @When("new user is created")
     public void newUserIsCreated() {
-        Response response = given()
+         loginResponse = given()
                 .header("Content-Type", "application/json")
                 .body(UserFactory.createUser())
                 .post("/api/auth/signup")
@@ -34,12 +33,12 @@ public class CrudTestStepDefinitions {
 
     @Then("status code is {int}")
     public void statusCodeIs(int statusCode) {
-        assertEquals(statusCode, response.statusCode());
+        assertEquals(statusCode, loginResponse.statusCode());
     }
 
     @And("session cookies stored")
     public void sessionCookiesStored() {
-        sessionCookie = response.getDetailedCookie("sid");
+        sessionCookie = loginResponse.getDetailedCookie("sid");
     }
 
     @When("user profile is updated")
@@ -49,9 +48,7 @@ public class CrudTestStepDefinitions {
                 .body(UserFactory.updateUserProfile())
                 .cookie(sessionCookie)
                 .when()
-                .put("/users/profile")
-                .then()
-                .statusCode(SC_OK);
+                .put("/api/users/profile");
     }
 
     @When("user profile info is requested")
@@ -59,9 +56,7 @@ public class CrudTestStepDefinitions {
         given()
                 .cookie(sessionCookie)
                 .when()
-                .get("/users/profile")
-                .then()
-                .statusCode(SC_OK);
+                .get("/api/users/profile");
 
     }
 }
