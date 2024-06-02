@@ -9,9 +9,12 @@ import io.restassured.RestAssured;
 import io.restassured.http.Cookie;
 import io.restassured.response.Response;
 import static io.restassured.RestAssured.given;
+import static org.apache.http.HttpStatus.SC_OK;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class CrudTestStepDefinitions {
 
+    private Cookie sessionCookie;
     private Response response;
     @Given("URI is set to {string}")
     public void uriIsSetToHttpsQautoForstudySpace(String s) {
@@ -23,33 +26,42 @@ public class CrudTestStepDefinitions {
         Response response = given()
                 .header("Content-Type", "application/json")
                 .body(UserFactory.createUser())
-                .log()
-                .all()
-                .when()
                 .post("/api/auth/signup")
                 .then()
-                .log()
-                .all()
-                .statusCode(201)
                 .extract()
                 .response();
-
     }
 
     @Then("status code is {int}")
-    public void statusCodeIs(int arg0) {
+    public void statusCodeIs(int statusCode) {
+        assertEquals(statusCode, response.statusCode());
     }
 
     @And("session cookies stored")
     public void sessionCookiesStored() {
-        Cookie sessionCookie = response.getDetailedCookie("sid");
+        sessionCookie = response.getDetailedCookie("sid");
     }
 
     @When("user profile is updated")
     public void userProfileIsUpdated() {
+        given()
+                .header("Content-Type", "application/json")
+                .body(UserFactory.updateUserProfile())
+                .cookie(sessionCookie)
+                .when()
+                .put("/users/profile")
+                .then()
+                .statusCode(SC_OK);
     }
 
     @When("user profile info is requested")
     public void userProfileInfoIsRequested() {
+        given()
+                .cookie(sessionCookie)
+                .when()
+                .get("/users/profile")
+                .then()
+                .statusCode(SC_OK);
+
     }
 }
